@@ -117,6 +117,25 @@ def test_erreur_reseau_n_est_pas_retentee() -> None:
     assert len(client.requests) == 1
 
 
+def test_run_distinct_produit_des_cles_de_cache_distinctes() -> None:
+    """Deux appels avec des `run` différents ne partagent pas de clé.
+
+    C'est ce qui permet à la mesure de stabilité d'obtenir plusieurs
+    réponses réelles indépendantes sur le même commentaire, au lieu
+    de relire toujours la même réponse en cache.
+    """
+    client = FakeClient([_VALIDE_ACCEPTABLE, _VALIDE_REJETE])
+    moderator = Moderator(client, model="modele-test")
+
+    moderator.moderate("le même commentaire", run=1)
+    moderator.moderate("le même commentaire", run=2)
+
+    assert len(client.requests) == 2
+    assert client.requests[0].run == 1
+    assert client.requests[1].run == 2
+    assert client.requests[0].cache_key() != client.requests[1].cache_key()
+
+
 def test_max_attempts_sous_un_leve() -> None:
     """max_attempts doit être au moins 1."""
     client = FakeClient([])

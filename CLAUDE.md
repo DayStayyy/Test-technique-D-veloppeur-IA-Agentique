@@ -207,6 +207,18 @@ Toute réponse de modèle est mise en cache **sur disque**, indexée par
 modèle, version de prompt et texte d'entrée. Relancer sans rien
 changer doit être **gratuit**.
 
+Le cache sert le développement et l'évaluation, pas la production :
+en production chaque commentaire est nouveau, la clé ne matche
+jamais, chaque appel reste réel. Il ne prétend pas non plus que le
+modèle est déterministe — une réponse en cache est un seul tirage.
+
+**Numéro de répétition, décidé en phase 4 (clôture).** Un champ
+`run` supplémentaire, au même titre que le numéro de tentative,
+permet de forcer plusieurs appels réels indépendants sur un même
+commentaire au lieu de relire toujours la même réponse. Il ne sert
+qu'à la mesure de stabilité (phase 5) ; le pipeline principal le
+laisse à 1.
+
 ### Tests, trois niveaux
 
 1. **Sans modèle** : parsing des quatre états de sortie (réponse

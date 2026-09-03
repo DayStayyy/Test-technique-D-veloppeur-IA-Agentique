@@ -64,7 +64,7 @@ class Moderator:
         self.model = model
         self.max_attempts = max_attempts
 
-    def moderate(self, text: str, context: str = "") -> Decision:
+    def moderate(self, text: str, context: str = "", run: int = 1) -> Decision:
         """Juge un commentaire au regard de la ligne legale.
 
         Une reponse mal formee est retentee une fois. Un refus ou
@@ -77,6 +77,11 @@ class Moderator:
             text: Texte du commentaire a juger.
             context: Titre de l'article ou contenu du post. Une
                 chaine vide signifie que le contexte est inconnu.
+            run: Numero de repetition, a partir de 1. Le pipeline
+                principal le laisse a 1 ; seule la mesure de
+                stabilite le fait varier, pour obtenir plusieurs
+                appels reels independants sur le meme commentaire au
+                lieu de relire toujours la meme reponse en cache.
 
         Returns:
             La decision rendue, avec sa tracabilite complete.
@@ -91,6 +96,7 @@ class Moderator:
                 user=user_message,
                 prompt_version=LEGAL_PROMPT_VERSION,
                 attempt=attempt,
+                run=run,
             )
             try:
                 response = self.client.complete(request)

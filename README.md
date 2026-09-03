@@ -120,6 +120,23 @@ invalide automatiquement les réponses obtenues avec l'ancienne
 version. Il n'y a jamais à vider le cache à la main, et aucun risque
 de comparer des résultats issus de deux prompts différents.
 
+**Ce que le cache ne fait pas : masquer l'aléatoire du modèle.** En
+production, chaque commentaire est nouveau, la clé ne correspond
+jamais à rien en cache, et chaque appel est réel — le cache ne
+change rien au comportement du système, il ne sert que le
+développement et l'évaluation, pour que les chiffres publiés dans ce
+README restent ceux qu'on obtient en relançant les scripts. Il ne
+prétend pas non plus que le modèle est déterministe : une réponse en
+cache reste un seul tirage, qui peut ne pas être celui qu'on
+obtiendrait une autre fois.
+
+C'est pour cette raison qu'un champ distinct, le numéro de
+répétition, permet de forcer plusieurs appels réels et indépendants
+sur un même commentaire au lieu de toujours relire la même réponse.
+Il sert uniquement à la mesure de stabilité (voir plus bas) : le
+pipeline principal ne l'utilise pas, une décision réelle n'a pas
+besoin d'être tirée plusieurs fois pour être rendue.
+
 ### Pipeline légal
 
 Une décision porte un statut, en plus de ses cinq champs : `valide`,

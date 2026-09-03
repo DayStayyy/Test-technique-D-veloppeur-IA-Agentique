@@ -58,6 +58,12 @@ class ModelRequest:
             separement. Sans cela, un retry relirait la meme reponse
             mal formee depuis le cache au lieu d'en demander une
             nouvelle.
+        run: Numero de repetition, a partir de 1. Sert uniquement a
+            la mesure de stabilite : demander plusieurs fois le meme
+            commentaire avec des `run` distincts force autant
+            d'appels reels independants, chacun mis en cache a part,
+            au lieu de relire toujours la meme reponse. Le pipeline
+            principal n'en a pas besoin et laisse `run` a 1.
     """
 
     model: str
@@ -66,6 +72,7 @@ class ModelRequest:
     prompt_version: str
     temperature: float = 0.0
     attempt: int = 1
+    run: int = 1
 
     def cache_key(self) -> str:
         """Calcule la cle de cache de la requete.
@@ -81,6 +88,7 @@ class ModelRequest:
                 "prompt_version": self.prompt_version,
                 "temperature": self.temperature,
                 "attempt": self.attempt,
+                "run": self.run,
             },
             ensure_ascii=False,
             sort_keys=True,
