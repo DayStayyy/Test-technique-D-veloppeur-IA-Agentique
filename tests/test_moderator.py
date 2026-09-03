@@ -11,7 +11,7 @@ import pytest
 
 from moderation.decision import Status, Verdict
 from moderation.llm import OpenRouterError
-from moderation.moderator import Moderator
+from moderation.moderator import Moderator, moderate_comment
 from tests.conftest import FakeClient
 
 _VALIDE_ACCEPTABLE = (
@@ -134,6 +134,19 @@ def test_run_distinct_produit_des_cles_de_cache_distinctes() -> None:
     assert client.requests[0].run == 1
     assert client.requests[1].run == 2
     assert client.requests[0].cache_key() != client.requests[1].cache_key()
+
+
+def test_moderate_comment_sans_cle_leve(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Le point d'entrée simple échoue proprement sans clé API.
+
+    Il n'y a pas de réseau à simuler ici : sans clé, la construction
+    du client échoue avant tout appel.
+    """
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(OpenRouterError):
+        moderate_comment("un commentaire")
 
 
 def test_max_attempts_sous_un_leve() -> None:

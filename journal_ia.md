@@ -31,8 +31,8 @@ l'IA » du README, rédigée à la main.
 
 ## Phase 5 — évaluation
 
-- Généré :
-- Corrigé / rejeté :
+- Généré : analyse des deux erreurs du premier passage, patch du prompt sur l'appel implicite avec deux exemples inédits (pas les phrases ratées, pour éviter le bachotage) ; mécanisme de répétition indépendante pour mesurer la stabilité sans que le cache ne masque l'aléatoire ; exécution des trois modèles sur dev puis sur le jeu de test gelé ; mesure de stabilité sur Luna ; fonction d'entrée `moderate_comment` ajoutée à la demande d'Adrien pour répondre littéralement à la consigne ; brouillon des cinq arbitrages.
+- Corrigé / rejeté : proposition de supprimer le cache pour restituer l'aléatoire du modèle, rejetée après discussion — remplacée par l'index de répétition, qui mesure l'aléatoire sans casser la reproductibilité des chiffres publiés. Brouillon d'arbitrages déplacé par erreur dans « Limites et pistes » au lieu d'être proposé pour ce bloc précis ; repositionné dans « Arbitrages » après clarification. Schéma d'architecture, usage de la fonction et lancement des tests remontés en tête du README à la demande d'Adrien, avant la stratégie.
 
 ## Phase 6 — documentation
 

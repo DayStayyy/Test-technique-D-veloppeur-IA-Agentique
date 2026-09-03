@@ -17,7 +17,12 @@ alors explicitement qu'aucun jugement n'a eu lieu.
 from __future__ import annotations
 
 from moderation.decision import Decision, Status
-from moderation.llm import ModelRequest, ModerationClient, OpenRouterError
+from moderation.llm import (
+    ModelRequest,
+    ModerationClient,
+    OpenRouterClient,
+    OpenRouterError,
+)
 from moderation.parsing import fallback_decision, parse_legal_response
 from moderation.prompts import (
     LEGAL_PROMPT_VERSION,
@@ -27,6 +32,34 @@ from moderation.prompts import (
 
 DEFAULT_MODEL = "openai/gpt-5.6-luna"
 DEFAULT_MAX_ATTEMPTS = 2
+
+
+def moderate_comment(
+    text: str, context: str = "", model: str = DEFAULT_MODEL
+) -> Decision:
+    """Point d'entrée unique : juge un commentaire au regard du droit.
+
+    C'est la fonction demandée par la consigne. Elle lit la clé
+    OpenRouter dans la variable d'environnement `OPENROUTER_API_KEY`
+    (voir `.env.example`), construit un client adossé au cache
+    disque, et rend un jugement. Pour enchaîner plusieurs
+    commentaires sans reconstruire le client à chaque appel — ce que
+    fait ce module en interne — utiliser directement `Moderator`.
+
+    Args:
+        text: Texte du commentaire à juger.
+        context: Titre de l'article ou contenu du post. Une chaîne
+            vide signifie que le contexte est inconnu.
+        model: Identifiant OpenRouter du modèle à interroger.
+
+    Returns:
+        La décision rendue, avec sa traçabilité complète.
+
+    Raises:
+        OpenRouterError: Si aucune clé n'est disponible.
+    """
+    client = OpenRouterClient()
+    return Moderator(client, model=model).moderate(text, context)
 
 
 class Moderator:

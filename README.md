@@ -9,6 +9,157 @@ regard de la loi française, **sans être plus restrictif que la loi**.
 
 ---
 
+## Architecture
+
+Un pipeline à un seul étage, pas un agent outillé : une question au
+modèle, avec la taxonomie fermée, et un jugement en retour. Aucune
+agrégation, puisque le périmètre est réduit au légal.
+
+```mermaid
+flowchart TD
+    IN["Commentaire + contexte\n(titre d'article ou contenu du post)"] --> PROMPT["Prompt légal\ntaxonomie fermée, 5 motifs"]
+    PROMPT --> CALL{{"Client OpenRouter\ncache disque"}}
+    CALL -- "erreur réseau" --> ERR["Decision\nstatut = erreur\nverdict = acceptable"]
+    CALL -- "réponse" --> PARSE["Parsing"]
+    PARSE -- "JSON valide" --> OK["Decision\nstatut = valide\nverdict + motif + justification + incertain"]
+    PARSE -- "refus du modèle" --> REF["Decision\nstatut = refus\nverdict = acceptable"]
+    PARSE -- "mal formé, 1ère tentative" --> CALL
+    PARSE -- "mal formé, 2e tentative" --> MF["Decision\nstatut = mal_formé\nverdict = acceptable"]
+```
+
+Quelle que soit la branche empruntée quand le jugement échoue —
+erreur réseau, refus, réponse mal formée après retry —, le verdict
+par défaut reste **acceptable**. Rejeter par défaut rendrait le
+système plus restrictif que la loi dès qu'un appel échoue, ce que la
+consigne interdit justement. Le statut de la décision indique alors
+explicitement qu'aucun jugement n'a eu lieu ; c'est ce qui permet de
+distinguer, dans les résultats, une vraie acceptation d'une panne.
+
+### Cache des réponses
+
+Chaque réponse de modèle est écrite sur le disque, dans `.cache/`,
+sous une clé calculée à partir de trois éléments : le modèle
+interrogé, la version du prompt et le texte envoyé. Avant tout appel,
+on regarde si cette clé existe déjà. Si oui, la réponse est relue du
+disque, sans appel réseau et sans coût.
+
+Ce mécanisme sert trois objectifs à la fois.
+
+Relancer une évaluation sans rien changer est gratuit et immédiat.
+Sur le test de refus, la seconde exécution a servi les 15 réponses
+depuis le disque, sans un seul appel réseau.
+
+Les résultats publiés sont reproductibles à l'identique, quelle que
+soit la température du modèle. C'est le cache qui garantit la
+reproductibilité, pas le réglage de température.
+
+Enfin, réécrire un prompt change sa version, donc la clé, donc
+invalide automatiquement les réponses obtenues avec l'ancienne
+version. Il n'y a jamais à vider le cache à la main, et aucun risque
+de comparer des résultats issus de deux prompts différents.
+
+**Ce que le cache ne fait pas : masquer l'aléatoire du modèle.** En
+production, chaque commentaire est nouveau, la clé ne correspond
+jamais à rien en cache, et chaque appel est réel — le cache ne
+change rien au comportement du système, il ne sert que le
+développement et l'évaluation, pour que les chiffres publiés dans ce
+README restent ceux qu'on obtient en relançant les scripts. Il ne
+prétend pas non plus que le modèle est déterministe : une réponse en
+cache reste un seul tirage, qui peut ne pas être celui qu'on
+obtiendrait une autre fois.
+
+C'est pour cette raison qu'un champ distinct, le numéro de
+répétition, permet de forcer plusieurs appels réels et indépendants
+sur un même commentaire au lieu de toujours relire la même réponse.
+Il sert uniquement à la mesure de stabilité (voir plus bas) : le
+pipeline principal ne l'utilise pas, une décision réelle n'a pas
+besoin d'être tirée plusieurs fois pour être rendue.
+
+### Pipeline légal
+
+Une réponse mal formée est retentée une fois, jamais un refus ni une
+erreur réseau : le modèle qui refuse le refera, et une erreur réseau
+mérite d'être visible plutôt que masquée. Chaque tentative est
+mémorisée séparément dans le cache, pour qu'un retry redemande
+vraiment une nouvelle réponse au lieu de relire la même réponse mal
+formée.
+
+Le pré-filtre mécanique prévu (commentaire vide, lien seul, doublon)
+n'a pas été codé. Le profil de phase 1 montre zéro commentaire vide,
+et un lien seul est de toute façon licite depuis le passage au
+périmètre légal seul : il n'aurait changé aucune décision, seulement
+économisé des appels sur environ 3 % du corpus.
+
+## Lancement et tests
+
+### Installation
+
+```bash
+uv sync
+cp .env.example .env
+# renseigner OPENROUTER_API_KEY dans .env
+```
+
+### Utiliser la fonction de modération
+
+Le livrable demandé par la consigne est `moderate_comment`, dans
+`src/moderation/moderator.py` :
+
+```python
+from moderation.moderator import moderate_comment
+
+decision = moderate_comment(
+    text="Il faut les virer, tous.",
+    context="Article sur l'immigration",  # optionnel
+)
+
+decision.verdict         # Verdict.ACCEPTABLE ou Verdict.REJETE
+decision.motif           # Motif | None, un des cinq motifs si rejeté
+decision.justification   # une phrase
+decision.incertain       # bool, ne change jamais le verdict
+decision.status          # Status.VALIDE / MAL_FORME / REFUS / ERREUR
+```
+
+Elle lit la clé dans `OPENROUTER_API_KEY` et interroge Luna par
+défaut. Pour juger plusieurs commentaires sans reconstruire le
+client à chaque appel, utiliser directement la classe `Moderator` :
+
+```python
+from moderation.llm import OpenRouterClient
+from moderation.moderator import Moderator
+
+client = OpenRouterClient()
+moderator = Moderator(client, model="anthropic/claude-haiku-4.5")
+for texte, contexte in commentaires:
+    decision = moderator.moderate(texte, contexte)
+```
+
+### Scripts
+
+Chaque script se lance avec `uv run python scripts/<nom>.py` et
+accepte `--help`. Toute réponse de modèle passe par le cache disque
+(`.cache/`) : relancer un script sans rien changer ne coûte rien.
+
+| Script | Rôle | Appels modèle |
+|---|---|---|
+| `profile_corpus.py` | profil descriptif des deux corpus | aucun |
+| `refusal_test.py` | test de refus des trois candidats | ~15 |
+| `emoji_test.py` | test de perception des emojis | ~21 |
+| `build_reference.py` | construit `data/jeu_reference.csv` à partir des corpus et des cas adverses | aucun |
+| `annotate.py` | annotation manuelle au clavier | aucun |
+| `run_batch.py --split dev\|test --model ...` | fait juger un split par un modèle | 1 par ligne (+ retry éventuel) |
+| `stability_test.py --n --k` | mesure la stabilité par répétitions indépendantes | n × k |
+
+### Tests
+
+```bash
+uv run pytest
+```
+
+28 tests de niveau un, sans réseau : parsing des quatre états de
+sortie, cohérence de l'objet de décision, retry sur réponse mal
+formée, absence de retry sur refus et sur erreur réseau.
+
 ## Stratégie
 
 La consigne impose une seule chose : rejeter ce qui est
@@ -89,75 +240,121 @@ Sources juridiques :
 
 ## Arbitrages
 
-*(à compléter au fil des phases — quatre ou cinq décisions
-structurantes : format de la décision, architecture et agrégation,
-protocole d'évaluation, choix du modèle, sacrifices assumés)*
+### 1. Format de la décision
 
-## Architecture
+> **Problème :** quelle structure donner à la décision retournée par
+> la fonction de modération.
+>
+> **Options envisagées :**
+> - Booléen simple accepté/rejeté. Rejeté : aucune traçabilité,
+>   aucune justification, impossible d'analyser une erreur après
+>   coup.
+> - Score de toxicité continu. Rejeté : la contrainte n'est pas un
+>   curseur de tolérance mais un seuil légal binaire ; un score
+>   ferait croire à une granularité que le droit n'a pas.
+> - Objet à cinq champs : décision binaire, motif légal en liste
+>   fermée ou vide, motifs éditoriaux (toujours vides, conservés
+>   pour marquer ce qu'on n'a pas traité), justification en une
+>   phrase, indicateur d'incertitude en métadonnée qui n'influence
+>   jamais la décision. Retenu.
+>
+> **Décision :** objet à cinq champs, tel que décrit.
 
-*(à compléter — phase 4)*
+### 2. Architecture et agrégation
 
-### Cache des réponses
+> **Problème :** un agent outillé à plusieurs critères, ou un
+> pipeline simple.
+>
+> **Options envisagées :**
+> - Deux étages, légal puis spam, avec agrégation par priorité au
+>   légal. Envisagé au départ, abandonné en phase 2 : la consigne
+>   n'impose que le légal, et le spam n'est pas détectable de façon
+>   fiable sur un commentaire isolé, sans historique d'auteur ni
+>   fréquence de publication.
+> - Un seul étage, périmètre réduit au légal. Retenu, confirmé
+>   ensuite par les données : le tirage aléatoire de la phase 3 n'a
+>   trouvé aucun contenu illicite sur 40 commentaires, ce qui aurait
+>   rendu un second étage éditorial encore plus difficile à valider
+>   dans le temps restant.
+>
+> **Décision :** pipeline à un seul étage, périmètre légal seul. Pas
+> d'agrégation, puisqu'il n'y a rien à agréger.
 
-Chaque réponse de modèle est écrite sur le disque, dans `.cache/`,
-sous une clé calculée à partir de trois éléments : le modèle
-interrogé, la version du prompt et le texte envoyé. Avant tout appel,
-on regarde si cette clé existe déjà. Si oui, la réponse est relue du
-disque, sans appel réseau et sans coût.
+### 3. Protocole d'évaluation
 
-Ce mécanisme sert trois objectifs à la fois.
+> **Problème :** comment construire un jeu de test alors que les
+> données ne sont pas annotées, et que le corpus contient très peu
+> de contenu illicite.
+>
+> **Options envisagées :**
+> - Faire annoter par un modèle. Rejeté : juge et partie, on
+>   mesurerait sa cohérence, pas sa justesse.
+> - Échantillon purement aléatoire. Rejeté seul : confirmé ensuite,
+>   zéro illicite sur 40 tirages, aucun rappel mesurable.
+> - Trois strates : aléatoire, présélection par cible protégée
+>   croisée avec un appel à agir, cas adverses écrits à la main avec
+>   autant de leurres que de cas illicites. Retenu, avec split
+>   dev/test figé avant annotation et une seule itération de prompt
+>   autorisée entre les deux.
+>
+> **Décision :** jeu de 100 lignes en trois strates. Chaque
+> annotation porte aussi un doute, croisé avec l'incertitude
+> déclarée par le modèle ; les métriques sont publiées avec et sans
+> les lignes douteuses, l'annotateur n'étant pas juriste.
 
-Relancer une évaluation sans rien changer est gratuit et immédiat.
-Sur le test de refus, la seconde exécution a servi les 15 réponses
-depuis le disque, sans un seul appel réseau.
+### 4. Choix du modèle
 
-Les résultats publiés sont reproductibles à l'identique, quelle que
-soit la température du modèle. C'est le cache qui garantit la
-reproductibilité, pas le réglage de température.
+> **Problème :** quel modèle retenir pour l'étage légal, entre
+> plusieurs propriétaires et un modèle à poids ouverts.
+>
+> **Options envisagées :**
+> - Trois candidats soumis à un test de refus : aucun disqualifié,
+>   les trois classifient sans se dérober.
+> - Test de perception des emojis : Ministral commet trois erreurs
+>   sur sept, contre 7/7 pour les deux autres. Écarté pour le
+>   développement, pas éliminé.
+> - Sur le jeu de test gelé, 49 lignes jamais consultées avant ce
+>   passage unique : Haiku 46/49 (2 faux positifs, 1 faux négatif
+>   partagé avec Luna sur un cas que l'annotateur avait lui-même
+>   signalé douteux) ; Luna 42/49 (4 faux positifs, 3 faux négatifs,
+>   dont un cas d'incitation explicite à la violence raté) ;
+>   Ministral 42/49 (7 faux positifs, 0 faux négatif — confirme sur
+>   le jeu gelé le sur-rejet déjà observé en développement).
+>
+> **Décision :** Ministral sur-rejette de façon nette et constante,
+> exactement le défaut que ce projet devait éviter — le modèle à
+> poids ouverts, retenu au départ pour cette raison même, est celui
+> qui s'écarte le plus de la ligne légale. Entre les deux
+> propriétaires, Haiku a le meilleur score sur le jeu gelé mais
+> coûte cinq fois plus cher que Luna. *Recommandation : Haiku pour
+> la justesse, sauf si le budget de production impose Luna — à
+> trancher.*
 
-Enfin, réécrire un prompt change sa version, donc la clé, donc
-invalide automatiquement les réponses obtenues avec l'ancienne
-version. Il n'y a jamais à vider le cache à la main, et aucun risque
-de comparer des résultats issus de deux prompts différents.
+### 5. Ce qu'on a sacrifié faute de temps
 
-**Ce que le cache ne fait pas : masquer l'aléatoire du modèle.** En
-production, chaque commentaire est nouveau, la clé ne correspond
-jamais à rien en cache, et chaque appel est réel — le cache ne
-change rien au comportement du système, il ne sert que le
-développement et l'évaluation, pour que les chiffres publiés dans ce
-README restent ceux qu'on obtient en relançant les scripts. Il ne
-prétend pas non plus que le modèle est déterministe : une réponse en
-cache reste un seul tirage, qui peut ne pas être celui qu'on
-obtiendrait une autre fois.
-
-C'est pour cette raison qu'un champ distinct, le numéro de
-répétition, permet de forcer plusieurs appels réels et indépendants
-sur un même commentaire au lieu de toujours relire la même réponse.
-Il sert uniquement à la mesure de stabilité (voir plus bas) : le
-pipeline principal ne l'utilise pas, une décision réelle n'a pas
-besoin d'être tirée plusieurs fois pour être rendue.
-
-### Pipeline légal
-
-Une décision porte un statut, en plus de ses cinq champs : `valide`,
-`mal_formé`, `refus` ou `erreur`. Quel que soit le statut, le verdict
-par défaut est **acceptable** — un système qui n'obtient pas de
-jugement du modèle ne doit pas devenir plus restrictif que la loi de
-son propre chef. Le statut, lui, rend visible qu'aucun jugement n'a
-eu lieu.
-
-Une réponse mal formée est retentée une fois, jamais un refus ni une
-erreur réseau : le modèle qui refuse le refera, et une erreur réseau
-mérite d'être visible plutôt que masquée. Chaque tentative est
-mémorisée séparément dans le cache, pour qu'un retry redemande
-vraiment une nouvelle réponse au lieu de relire la même réponse mal
-formée.
-
-Le pré-filtre mécanique prévu (commentaire vide, lien seul, doublon)
-n'a pas été codé. Le profil de phase 1 montre zéro commentaire vide,
-et un lien seul est de toute façon licite depuis le passage au
-périmètre légal seul : il n'aurait changé aucune décision, seulement
-économisé des appels sur environ 3 % du corpus.
+> **Problème :** un budget serré impose de couper quelque part
+> plutôt que de tout faire à moitié.
+>
+> **Ce qui a été coupé :**
+> - L'étage éditorial (spam, hors-sujet), abandonné dès la
+>   conception.
+> - Le pré-filtre mécanique, qui aurait ignoré les liens seuls et
+>   les messages vides, jamais codé : il n'aurait changé aucune
+>   décision, seulement économisé des appels sur environ 3 % du
+>   corpus.
+> - La distribution sur un échantillon du corpus complet non
+>   annoté, sautée faute de temps. Elle aurait donné une idée du
+>   pourcentage de commentaires jugés illicites par le modèle, pour
+>   voir s'il a la main trop lourde à grande échelle, mais n'aurait
+>   pas permis de repérer là où il aurait eu la main trop légère —
+>   ça suppose une vérité terrain, donc le jeu de référence.
+> - La comparaison des modèles limitée au jeu de référence de
+>   100 lignes, jamais élargie à un échantillon plus large du corpus
+>   réel.
+>
+> **Décision :** ces manques sont documentés ici plutôt que masqués,
+> avec ce qu'on ferait en premier avec plus de temps (bloc
+> « Limites et pistes »).
 
 ## Dataset et résultats
 
@@ -492,13 +689,64 @@ cadrage, pas la moitié gelée, et l'échantillon est petit. La
 comparaison qui compte est celle du jeu de test, une seule fois,
 décrite plus bas.
 
-## Lancement et tests
+### Le test tenu
 
-*(à compléter — phase 6)*
+Les 49 lignes de la moitié gelée, jamais consultées avant ce passage,
+soumises une seule fois aux trois modèles avec le prompt v2.
+
+| | Haiku | Luna | Ministral |
+|---|---|---|---|
+| accord avec l'annotation | **46 / 49** | 42 / 49 | 42 / 49 |
+| faux positifs | 2 | 4 | **7** |
+| faux négatifs | 1 | 3 | **0** |
+
+**Ministral confirme sur le jeu gelé le sur-rejet observé en
+développement** : zéro faux négatif, mais 7 faux positifs sur 49,
+soit un commentaire sur sept rejeté à tort. C'est le modèle à poids
+ouverts, retenu au départ notamment pour cette raison-là, et c'est
+lui qui s'écarte le plus de la ligne légale.
+
+**Luna recule par rapport à son score de développement** — 3 faux
+négatifs sur le jeu gelé, dont un cas d'incitation explicite à la
+violence (« faut sortir les fusils et nettoyer les quartiers ») que
+le prompt aurait dû attraper sans difficulté. Le score de la moitié
+dev, très bon, ne s'est pas reproduit à l'identique.
+
+**Haiku obtient le meilleur score, 46/49.** Ses deux faux positifs et
+son unique faux négatif portent sur des cas déjà identifiés comme
+limites : l'un des faux positifs est un commentaire que l'annotateur
+lui-même avait marqué douteux, et le faux négatif est partagé avec
+Luna sur ce même cas.
+
+Un faux positif commun aux trois modèles mérite un second regard
+plutôt qu'une conclusion hâtive : un commentaire accusant un
+adversaire politique de trivialiser le sort de Gaza, puis affirmant
+que des chrétiens d'Orient auraient eu tort de « s'imposer » dans ces
+pays. L'annotation dit acceptable, sans doute ; les trois modèles le
+rejettent. Le vocabulaire y est chargé — « détail de l'histoire »
+rappelle directement une petite phrase de Le Pen sur la Shoah — et la
+formule finale se lit, à la relecture, plus comme une justification
+que comme une simple pique. C'est un candidat à revoir contre le
+texte de loi plutôt qu'un faux positif tranché.
+
+**Décision finale sur le modèle : voir l'arbitrage « Choix du
+modèle » ci-dessus.**
+
+### Stabilité
+
+15 commentaires de la moitié dev, interrogés 5 fois chacun de façon
+indépendante (voir « Cache des réponses »), avec Luna : **100 %
+d'accord, les 15 unanimes sur leurs 5 réponses.** Les deux cas
+qu'on savait fragiles se confirment stables dans les deux sens —
+celui resté mal classé redonne le même verdict à chaque fois, celui
+corrigé par le patch aussi. Ce n'est donc pas du bruit d'échantillon
+qui explique les écarts observés ailleurs, c'est un vrai comportement
+du modèle sur ce prompt. Mesuré sur Luna seulement, faute de temps
+pour l'étendre aux deux autres candidats.
 
 ## Usage de l'IA
 
-*(à compléter — phase 6)*
+voir 
 
 ## Limites et pistes
 
