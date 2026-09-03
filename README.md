@@ -120,16 +120,19 @@ decision.incertain       # bool, ne change jamais le verdict
 decision.status          # Status.VALIDE / MAL_FORME / REFUS / ERREUR
 ```
 
-Elle lit la clé dans `OPENROUTER_API_KEY` et interroge Luna par
-défaut. Pour juger plusieurs commentaires sans reconstruire le
-client à chaque appel, utiliser directement la classe `Moderator` :
+Elle lit la clé dans `OPENROUTER_API_KEY` et interroge Haiku par
+défaut, le modèle retenu à l'issue du test tenu (voir Arbitrages,
+« Choix du modèle »). Pour juger plusieurs commentaires sans
+reconstruire le client à chaque appel, ou pour choisir un autre
+modèle — Luna, cinq fois moins cher, par exemple —, utiliser
+directement la classe `Moderator` :
 
 ```python
 from moderation.llm import OpenRouterClient
 from moderation.moderator import Moderator
 
 client = OpenRouterClient()
-moderator = Moderator(client, model="anthropic/claude-haiku-4.5")
+moderator = Moderator(client, model="openai/gpt-5.6-luna")
 for texte, contexte in commentaires:
     decision = moderator.moderate(texte, contexte)
 ```
@@ -325,10 +328,13 @@ Sources juridiques :
 > exactement le défaut que ce projet devait éviter — le modèle à
 > poids ouverts, retenu au départ pour cette raison même, est celui
 > qui s'écarte le plus de la ligne légale. Entre les deux
-> propriétaires, Haiku a le meilleur score sur le jeu gelé mais
-> coûte cinq fois plus cher que Luna. *Recommandation : Haiku pour
-> la justesse, sauf si le budget de production impose Luna — à
-> trancher.*
+> propriétaires, **Haiku a le meilleur score sur le jeu gelé** et
+> devient le modèle par défaut du code livré, malgré un coût cinq
+> fois supérieur à Luna (1,00 $ / 5,00 $ contre 0,20 $ / 1,20 $ par
+> million de tokens) — négligeable sur le volume de ce projet, à
+> surveiller si le système passait à l'échelle. Luna reste le modèle
+> documenté pendant le développement, Haiku est celui retenu à la
+> fin, une fois les trois candidats comparés sur le jeu gelé.
 
 ### 5. Ce qu'on a sacrifié faute de temps
 
@@ -746,7 +752,25 @@ pour l'étendre aux deux autres candidats.
 
 ## Usage de l'IA
 
-voir 
+Claude (Claude Code et claude desktop) a été utilisé du premier au dernier commit, de deux façons distinctes.
+
+Comme interlocuteur, d'abord. Mes pistes de réfléxion, mes solutions ainsi que chaque décision structurante la taxonomie légale, le format de la décision, le découpage du jeu de référence, le choix du modèle a été discutée avant d'être codée :
+je soumettais mon analyse ou mon annotation, Claude renvoyait un
+avis, proposait des solutions auxquelles je n'avais pas pensé
+(l'index de répétition pour mesurer la stabilité sans supprimer le
+cache, par exemple), et me contredisait quand mon raisonnements
+avait un trou permettant de me faire aller plus loin dans mes raisonnement et me challengeant.
+
+
+Comme outil de code, ensuite : l'essentiel du code source, des
+scripts et de la documentation a été écrit par Claude, sous ma
+relecture et ma validation à chaque étape, jamais commité sans mon
+accord.
+
+Le détail phase par phase ce qui a été généré, ce que j'ai corrigé
+ou rejeté et pourquoi est dans [`journal_ia.md`](journal_ia.md),
+tenu à jour tout au long du projet plutôt que reconstitué après
+coup.
 
 ## Limites et pistes
 

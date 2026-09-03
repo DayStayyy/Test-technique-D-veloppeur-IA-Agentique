@@ -30,7 +30,7 @@ from moderation.prompts import (
     build_legal_user_message,
 )
 
-DEFAULT_MODEL = "openai/gpt-5.6-luna"
+DEFAULT_MODEL = "anthropic/claude-haiku-4.5"
 DEFAULT_MAX_ATTEMPTS = 2
 
 
