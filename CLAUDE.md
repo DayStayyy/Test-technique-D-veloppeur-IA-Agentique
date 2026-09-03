@@ -162,6 +162,14 @@ température.
 Les critères sont **le taux de refus** et **le taux de
 faux positifs sur les cas « choquant mais légal »**.
 
+**Modèle de travail, décidé en phase 1.** Le test de refus n'a
+disqualifié aucun candidat : les trois ont classé les cinq cas sans
+jamais refuser. Le développement se poursuit donc avec un seul
+modèle, **Ministral 3 14B** (`mistralai/ministral-14b-2512`), à
+poids ouverts. C'est un choix de travail, pas le choix final. La
+comparaison des trois candidats est reportée aux tests finaux, sur
+le jeu de référence gelé.
+
 À confirmer en phase 1, au premier appel réel : l'id exact du modèle
 Mistral (le préfixe `mistralai/` reste à vérifier), et la capacité de
 chaque candidat à rendre du JSON strict sur la taxonomie fermée —
