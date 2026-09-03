@@ -741,14 +741,27 @@ modèle » ci-dessus.**
 ### Stabilité
 
 15 commentaires de la moitié dev, interrogés 5 fois chacun de façon
-indépendante (voir « Cache des réponses »), avec Luna : **100 %
-d'accord, les 15 unanimes sur leurs 5 réponses.** Les deux cas
+indépendante (voir « Cache des réponses »), sur les trois modèles.
+
+| | Haiku | Luna | Ministral |
+|---|---|---|---|
+| commentaires unanimes | 15 / 15 | 15 / 15 | 14 / 15 |
+| taux d'accord moyen | 100 % | 100 % | 98,7 % |
+
+Haiku et Luna sont parfaitement stables. Chez Luna, les deux cas
 qu'on savait fragiles se confirment stables dans les deux sens —
 celui resté mal classé redonne le même verdict à chaque fois, celui
 corrigé par le patch aussi. Ce n'est donc pas du bruit d'échantillon
 qui explique les écarts observés ailleurs, c'est un vrai comportement
-du modèle sur ce prompt. Mesuré sur Luna seulement, faute de temps
-pour l'étendre aux deux autres candidats.
+du modèle sur ce prompt.
+
+**Ministral, lui, bascule une fois sur cinq sur un cas** — un
+commentaire d'humour noir sur le prix du beurre, écrit comme leurre
+justement parce qu'il est licite : quatre tirages sur cinq le
+rejettent, un l'accepte. Ministral ne se contente donc pas de
+sur-rejeter de façon constante ; une partie de ce sur-rejet tient
+aussi à une vraie instabilité d'exécution, un défaut de plus qui
+s'ajoute au biais déjà mesuré sur dev et sur test.
 
 ## Usage de l'IA
 
@@ -774,4 +787,83 @@ coup.
 
 ## Limites et pistes
 
-*(à compléter — phase 6)*
+### Limites connues
+
+**Deux commentaires font l'objet d'un désaccord frontal entre
+l'annotation et les trois modèles**, qui rejettent à l'unanimité ce
+qui a été annoté acceptable. Le plus net porte sur un commentaire
+accusant un adversaire politique de trivialiser Gaza puis affirmant
+que des chrétiens d'Orient auraient eu tort de « s'imposer » dans
+ces pays — le vocabulaire y rappelle une petite phrase connue sur la
+Shoah, et la formule finale se lit, à la relecture, plus comme une
+justification que comme une pique. L'annotation vient d'une seule
+personne, non juriste : sur ces deux cas précis, elle n'a pas plus
+d'autorité que les modèles qu'elle est censée évaluer.
+
+**Même le modèle retenu n'est pas exempt d'erreurs.** Sur le jeu
+gelé, Haiku ne compte que deux faux positifs et un faux négatif, mais
+aucun n'est un cas franc : le faux négatif est partagé avec Luna sur
+un commentaire que l'annotateur avait lui-même marqué douteux, et un
+des faux positifs est le cas Gaza ci-dessus. Rassurant, mais ça ne
+dit rien du comportement du modèle sur des commentaires très
+différents de ceux du jeu de référence.
+
+**Ministral n'est pas seulement biaisé, il est aussi instable.** La
+mesure de stabilité, faite sur les trois modèles, donne Haiku et Luna
+parfaitement stables, mais Ministral bascule une fois sur cinq sur un
+commentaire licite (voir « Stabilité »). Le sur-rejet mesuré sur dev
+et sur test n'est donc pas qu'un biais constant, une partie tient au
+hasard de l'exécution — un défaut de plus qui l'aurait de toute façon
+écarté.
+
+**Le contexte conversationnel manque sur une bonne partie des
+commentaires Facebook** — environ 38 % répondent à un autre
+commentaire, absent du jeu de données (détail dans « Dataset et
+résultats »). Le système comme l'annotateur perdent alors le fil
+qui donnerait leur sens à des commentaires autrement inqualifiables.
+
+**La comparaison des trois modèles ne porte que sur 100 lignes.**
+Un écart de quelques points sur un tel échantillon reste fragile
+statistiquement, même quand la tendance (Ministral sur-rejette,
+Haiku est le plus précis) est nette sur les deux moitiés dev et
+test.
+
+### Pistes
+
+**Faire trancher les cas litigieux par un vrai travail juridique**,
+au lieu de la lecture d'un non-juriste. Les deux commentaires
+signalés ci-dessus sont les meilleurs candidats : reprendre le texte
+de loi, éventuellement consulter quelqu'un de qualifié, et corriger
+l'annotation si elle s'avère fausse plutôt que de trancher en faveur
+du modèle par défaut.
+
+**Faire tourner le système sur un échantillon aléatoire de quelques
+centaines de lignes du corpus complet, non annoté**, pour observer
+la part de commentaires rejetés à l'échelle. Utile pour repérer un
+modèle qui aurait la main trop lourde en général — un taux de rejet
+anormalement élevé serait un signal clair. Insuffisant en revanche
+pour repérer la main trop légère : sans vérité terrain, un faux
+négatif ne se voit pas, il faudrait annoter cet échantillon aussi
+pour mesurer un vrai rappel.
+
+**Étage éditorial (spam, hors-sujet)**, écarté depuis la phase 2
+faute de signal fiable sur un commentaire isolé. Deviendrait
+pertinent avec un historique d'auteur ou une fréquence de
+publication, données absentes du corpus fourni.
+
+**Un second étage pour les cas incertains**, plutôt qu'un unique
+appel pour chaque commentaire. Le champ `incertain` marque environ
+5 % des décisions ; ces cas-là, et seulement eux, pourraient
+déclencher un vote sur plusieurs tirages indépendants ou un agent
+capable d'aller chercher de la jurisprudence avant de trancher — un
+mini-agent LangGraph pourrait le démontrer, à condition de mettre en
+cache ses résultats de recherche pour ne pas casser la
+reproductibilité du reste du système. Écarté du pipeline principal
+pour cette même raison de coût et de reproductibilité (voir « Cache
+des réponses »), mais c'est l'endroit où l'architecture agentique
+aurait un vrai rôle à jouer dans ce projet.
+
+**Normaliser le texte avant l'envoi au modèle** — un caractère
+invisible dans l'un des cas adverses (un espace de largeur nulle
+accolé à un emoji) n'a rien changé au résultat, mais rien ne garantit
+que ce sera toujours le cas.

@@ -36,5 +36,5 @@ l'IA » du README, rédigée à la main.
 
 ## Phase 6 — documentation
 
-- Généré :
-- Corrigé / rejeté :
+- Généré : fonction d'entrée `moderate_comment` ; schéma d'architecture Mermaid ; sections « Lancement et tests », « Usage de l'IA » et « Limites et pistes » ; brouillon des cinq arbitrages, formaté et complété au fil des résultats ; réorganisation du README (architecture et prise en main avant la stratégie) ; mesure de stabilité étendue à Haiku puis à Ministral.
+- Corrigé / rejeté : règle interdisant à Claude d'écrire la note usage de l'IA assouplie par Adrien, faute de temps — ce n'était pas une exigence de la consigne, seulement une précaution du projet ; le texte a donc été rédigé par Claude puis laissé à la relecture d'Adrien. Modèle par défaut changé de Luna à Haiku après correction d'une prémisse erronée d'Adrien sur lequel des trois avait le meilleur score. Brouillon d'arbitrages déplacé par erreur dans « Limites et pistes » au lieu d'« Arbitrages », corrigé après remarque d'Adrien. Un bullet « pistes » annoncé dans un résumé mais jamais réellement écrit dans le fichier, repéré et corrigé après question d'Adrien sur la stabilité de Haiku.
