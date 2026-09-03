@@ -137,6 +137,19 @@ for texte, contexte in commentaires:
     decision = moderator.moderate(texte, contexte)
 ```
 
+### Jeu de référence
+
+Le dataset utilisé pour la validation est
+[`data/jeu_reference.csv`](data/jeu_reference.csv) : 100 commentaires
+annotés à la main, en trois strates (aléatoire, présélection par
+cible protégée, cas adverses écrits à la main), coupés en une moitié
+de cadrage et une moitié gelée. Construit par `build_reference.py` à
+partir des deux corpus fournis
+([`data/article_comments.csv`](data/article_comments.csv),
+[`data/post_comments.csv`](data/post_comments.csv)) et des cas
+adverses ([`data/cas_adverses.toml`](data/cas_adverses.toml)).
+Protocole complet et résultats dans « Dataset et résultats ».
+
 ### Scripts
 
 Chaque script se lance avec `uv run python scripts/<nom>.py` et
