@@ -148,10 +148,17 @@ on l'assume dans la documentation.
 
 ### Règles et LLM
 
-Les règles déterministes servent **uniquement** au pré-filtre
-mécanique (commentaire vide, lien seul, doublon exact) et à la
-présélection de candidats pour l'annotation. **Jamais comme verdict
-légal.**
+Les règles déterministes servent **uniquement** à la présélection de
+candidats pour l'annotation. **Jamais comme verdict légal.**
+
+**Pré-filtre mécanique abandonné, décidé en phase 4.** Il devait
+écarter sans appel modèle les commentaires vides, les liens seuls et
+les doublons exacts. Le profil de phase 1 a montré zéro commentaire
+vide sur les deux corpus, et depuis le passage au périmètre légal
+seul (phase 2) un lien seul est de toute façon licite : le pré-filtre
+n'aurait donc changé aucune décision, seulement économisé des appels
+sur environ 3 % du corpus. C'était déjà le premier sacrifice prévu en
+cas de manque de temps ; il n'a jamais été codé.
 
 ### Modèles
 
@@ -203,10 +210,12 @@ changer doit être **gratuit**.
 ### Tests, trois niveaux
 
 1. **Sans modèle** : parsing des quatre états de sortie (réponse
-   valide, mal formée, refus, erreur), règles du pré-filtre,
-   agrégation, et test de trajectoire vérifiant que l'étage spam
-   n'est pas appelé quand le légal rejette — le tout avec des
-   réponses simulées.
+   valide, mal formée, refus, erreur) et cohérence de l'objet de
+   décision, le tout avec des réponses simulées. Le test de
+   trajectoire prévu pour vérifier que l'étage spam n'est pas
+   appelé quand le légal rejette n'a plus d'objet : il n'y a plus
+   qu'un seul étage depuis la réduction du périmètre au légal
+   (phase 2).
 2. **Quelques vrais appels en cache**, pour vérifier le format.
 3. **L'évaluation sur le jeu de référence.**
 

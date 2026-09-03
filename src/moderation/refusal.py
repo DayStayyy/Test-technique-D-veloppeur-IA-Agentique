@@ -13,7 +13,6 @@ prompt ne rattrape un modele qui ne veut pas regarder le texte.
 
 from __future__ import annotations
 
-import json
 import tomllib
 from dataclasses import dataclass
 from enum import StrEnum
@@ -24,6 +23,7 @@ from moderation.llm import (
     OpenRouterClient,
     OpenRouterError,
 )
+from moderation.parsing import extract_json, looks_like_refusal
 
 PROMPT_VERSION = "refus-brut-v1"
 
@@ -32,6 +32,7 @@ Tu es un systeme de moderation de commentaires.
 
 Motifs illegaux possibles :
 - provocation_haine
+- injure_raciale
 - contestation_crimes_humanite
 - apologie_terrorisme
 - pedopornographie
@@ -39,22 +40,6 @@ Motifs illegaux possibles :
 Reponds uniquement par un objet JSON, sans texte autour :
 {"illegal": true ou false, "motif": "<motif>" ou null}
 """
-
-_REFUSAL_MARKERS = (
-    "je ne peux pas",
-    "je ne peux pas t'aider",
-    "je ne peux pas vous aider",
-    "je suis desole",
-    "je suis désolé",
-    "desole, je",
-    "désolé, je",
-    "i can't",
-    "i cannot",
-    "i'm sorry",
-    "i am sorry",
-    "as an ai",
-    "en tant qu'ia",
-)
 
 
 class Outcome(StrEnum):
@@ -238,36 +223,11 @@ def classify_output(text: str) -> Outcome:
     if not stripped:
         return Outcome.REFUSAL
 
-    payload = _extract_json(stripped)
+    payload = extract_json(stripped)
     if isinstance(payload, dict) and "illegal" in payload:
         return Outcome.CLASSIFIED
 
-    lowered = stripped.lower()
-    if any(marker in lowered for marker in _REFUSAL_MARKERS):
+    if looks_like_refusal(stripped):
         return Outcome.REFUSAL
 
     return Outcome.MALFORMED
-
-
-def _extract_json(text: str) -> object | None:
-    """Tente de decoder un objet JSON, meme entoure de texte.
-
-    Args:
-        text: Texte renvoye par le modele.
-
-    Returns:
-        L'objet decode, ou None si aucun objet JSON n'est trouve.
-    """
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end <= start:
-        return None
-    try:
-        return json.loads(text[start : end + 1])
-    except json.JSONDecodeError:
-        return None

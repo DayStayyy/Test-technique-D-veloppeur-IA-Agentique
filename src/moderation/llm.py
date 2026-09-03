@@ -14,6 +14,7 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 import httpx
 
@@ -24,6 +25,19 @@ DEFAULT_CACHE_DIR = Path(".cache") / "openrouter"
 
 class OpenRouterError(RuntimeError):
     """Appel a OpenRouter impossible ou reponse inexploitable."""
+
+
+class ModerationClient(Protocol):
+    """Interface minimale requise pour juger un commentaire.
+
+    `OpenRouterClient` la satisfait. Les tests de niveau un
+    substituent un client factice qui ne touche ni au reseau ni au
+    disque, sans dependre d'une classe concrete.
+    """
+
+    def complete(self, request: ModelRequest) -> ModelResponse:
+        """Soumet une requete et renvoie la reponse du modele."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +52,12 @@ class ModelRequest:
             cle de cache pour qu'une reecriture de prompt invalide
             les reponses obtenues avec l'ancienne.
         temperature: Temperature demandee au modele.
+        attempt: Numero de la tentative, a partir de 1. Une reponse
+            mal formee peut etre retentee ; le numero entre dans la
+            cle de cache pour que chaque tentative soit memorisee
+            separement. Sans cela, un retry relirait la meme reponse
+            mal formee depuis le cache au lieu d'en demander une
+            nouvelle.
     """
 
     model: str
@@ -45,6 +65,7 @@ class ModelRequest:
     user: str
     prompt_version: str
     temperature: float = 0.0
+    attempt: int = 1
 
     def cache_key(self) -> str:
         """Calcule la cle de cache de la requete.
@@ -59,6 +80,7 @@ class ModelRequest:
                 "user": self.user,
                 "prompt_version": self.prompt_version,
                 "temperature": self.temperature,
+                "attempt": self.attempt,
             },
             ensure_ascii=False,
             sort_keys=True,

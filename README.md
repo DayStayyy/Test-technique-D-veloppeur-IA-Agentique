@@ -120,6 +120,28 @@ invalide automatiquement les réponses obtenues avec l'ancienne
 version. Il n'y a jamais à vider le cache à la main, et aucun risque
 de comparer des résultats issus de deux prompts différents.
 
+### Pipeline légal
+
+Une décision porte un statut, en plus de ses cinq champs : `valide`,
+`mal_formé`, `refus` ou `erreur`. Quel que soit le statut, le verdict
+par défaut est **acceptable** — un système qui n'obtient pas de
+jugement du modèle ne doit pas devenir plus restrictif que la loi de
+son propre chef. Le statut, lui, rend visible qu'aucun jugement n'a
+eu lieu.
+
+Une réponse mal formée est retentée une fois, jamais un refus ni une
+erreur réseau : le modèle qui refuse le refera, et une erreur réseau
+mérite d'être visible plutôt que masquée. Chaque tentative est
+mémorisée séparément dans le cache, pour qu'un retry redemande
+vraiment une nouvelle réponse au lieu de relire la même réponse mal
+formée.
+
+Le pré-filtre mécanique prévu (commentaire vide, lien seul, doublon)
+n'a pas été codé. Le profil de phase 1 montre zéro commentaire vide,
+et un lien seul est de toute façon licite depuis le passage au
+périmètre légal seul : il n'aurait changé aucune décision, seulement
+économisé des appels sur environ 3 % du corpus.
+
 ## Dataset et résultats
 
 ### Les corpus fournis
@@ -381,6 +403,34 @@ deux modèles restants.
 C'est un choix de travail, pas le choix final. La comparaison des
 trois candidats est reportée aux tests finaux, sur le jeu de
 référence gelé. C'est le seul moment où elle a du sens.
+
+### Premier passage sur la moitié de cadrage
+
+Les 51 lignes de la moitié dev ont été soumises à Luna.
+
+| | |
+|---|---|
+| réponses valides | 51 / 51 |
+| accord avec l'annotation | 49 / 51 |
+| faux positifs | **0** |
+| faux négatifs | 2 |
+
+Aucun mal formé, aucun refus. Et surtout **aucun faux positif** : sur
+51 commentaires, le modèle n'a jamais rejeté ce qu'un humain jugeait
+licite — l'objectif central du projet.
+
+Les deux désaccords sont des faux négatifs, tous deux sur un appel
+implicite : le point le plus difficile du prompt. Sur « bravo Israël
+qui nettoie la fosse septique islamistes », le modèle écrit qu'il n'y
+a « pas d'appel explicite », alors que le prompt dit que l'implicite
+compte. Sur la menace d'incendier un centre d'accueil, le modèle lit
+la cible comme un bâtiment plutôt que comme les personnes qui y
+seraient hébergées.
+
+Ce premier passage ne vaut pas encore d'analyse : la moitié test n'a
+pas été regardée, et une seule réécriture de prompt est permise entre
+les deux. L'analyse d'erreurs et cette réécriture éventuelle relèvent
+de la phase suivante.
 
 ## Lancement et tests
 

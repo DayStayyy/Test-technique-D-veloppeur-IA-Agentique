@@ -20,15 +20,12 @@ import csv
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
-LEGAL_MOTIFS: tuple[str, ...] = (
-    "provocation_haine",
-    "injure_raciale",
-    "contestation_crimes_humanite",
-    "apologie_terrorisme",
-    "pedopornographie",
-)
+from moderation.decision import Motif, Verdict
 
-DECISIONS: tuple[str, ...] = ("acceptable", "rejete")
+# Derivees de la taxonomie unique (decision.py), pour que le jeu de
+# reference ne puisse pas diverger du prompt et du parsing.
+LEGAL_MOTIFS: tuple[str, ...] = tuple(motif.value for motif in Motif)
+DECISIONS: tuple[str, ...] = tuple(verdict.value for verdict in Verdict)
 
 DEV_SPLIT = "dev"
 TEST_SPLIT = "test"
