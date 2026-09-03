@@ -449,6 +449,49 @@ pas été regardée, et une seule réécriture de prompt est permise entre
 les deux. L'analyse d'erreurs et cette réécriture éventuelle relèvent
 de la phase suivante.
 
+### Prompt v2 : la seule réécriture permise
+
+Les deux faux négatifs ci-dessus partagent une cause commune : le
+modèle traite « implicite » trop littéralement. Le prompt a été
+complété sur ce point précis, avec deux nouveaux exemples — pas les
+deux phrases qui avaient raté, pour ne pas se contenter de les faire
+mémoriser, mais deux cas nouveaux illustrant le même principe :
+approuver une violence en cours équivaut à l'appeler de ses vœux, et
+un bien qui symbolise ou abrite un groupe protégé fait de ce groupe
+la cible réelle. C'est la seule itération de prompt permise par le
+protocole ; le reste du texte n'a pas bougé.
+
+Les 51 lignes de la moitié dev ont été rejouées avec le prompt v2,
+sur les trois modèles candidats.
+
+| | Haiku | Luna | Ministral |
+|---|---|---|---|
+| accord avec l'annotation | **51 / 51** | 50 / 51 | 44 / 51 |
+| faux positifs | 0 | 0 | **7** |
+| faux négatifs | 0 | 1 | 0 |
+
+Le patch corrige les deux cas visés chez Haiku et Ministral. Chez
+Luna, l'incendie du centre d'accueil est maintenant rejeté, mais
+« bravo Israël qui nettoie... » reste accepté — avec cependant son
+indicateur d'incertitude à `true` : le modèle hésite exactement là où
+il se trompe, ce que ce champ est censé capturer.
+
+Le résultat le plus net porte sur Ministral, qui **sur-rejette** :
+7 faux positifs sur 51, dont plusieurs commentaires déjà discutés
+comme choquants mais légaux — la critique de la chasse, « expulser
+les clandestins » (l'appel à une mesure légale, pas à une
+discrimination), le commentaire complotiste sur la franc-maçonnerie,
+la comparaison ambiguë à « un corps étranger », la critique d'un
+parti qualifié d'antisémite, la diatribe contre l'enseignement de la
+« trans identité », et l'humour noir sur le prix du beurre. Aucun de
+ces sept n'est un faux négatif ailleurs : c'est un sur-rejet propre,
+le défaut que tout le projet cherche à éviter.
+
+Ce classement sur 51 lignes reste indicatif : c'est la moitié de
+cadrage, pas la moitié gelée, et l'échantillon est petit. La
+comparaison qui compte est celle du jeu de test, une seule fois,
+décrite plus bas.
+
 ## Lancement et tests
 
 *(à compléter — phase 6)*
