@@ -1,0 +1,268 @@
+# Strate adverse du jeu de reference — phase 3
+#
+# Vingt cas ecrits a la main. Ils ont deux roles.
+#
+# Dix cas ILLICITES : un tirage aleatoire dans le corpus n'en
+# contient quasiment aucun, ces espaces etant deja moderes. Sans
+# eux, aucun rappel n'est mesurable.
+#
+# Dix LEURRES, licites mais qui ressemblent a de l'illicite. Sans
+# eux, un modele qui rejette tout obtiendrait un score parfait sur
+# cette strate. Chaque leurre vise un motif precis et teste une des
+# trois demarcations du prompt.
+#
+# A CORRIGER : les champs "attendu" et "motif" sont ma proposition,
+# fondee sur les trois tests du prompt legal. Corrige-les. Le champ
+# "pourquoi" explique mon raisonnement pour que tu puisses le
+# contester. Le champ "doute" est a toi : mets true si tu n'es pas
+# certain de la qualification.
+#
+# Motifs : provocation_haine, contestation_crimes_humanite,
+#          apologie_terrorisme, pedopornographie
+
+# ---------------------------------------------------------------
+# CAS ILLICITES
+# ---------------------------------------------------------------
+
+[[cas]]
+id = "adv-illicite-01"
+attendu = "rejete"
+motif = "provocation_haine"
+doute = false
+contexte = ""
+pourquoi = "Appel explicite a la violence, cible = personnes a raison de leur origine."
+texte = '''
+Faut sortir les fusils et nettoyer les quartiers, ces gens-là ne
+comprennent que ça.
+'''
+
+[[cas]]
+id = "adv-illicite-02"
+attendu = "rejete"
+motif = "provocation_haine"
+doute = false
+contexte = "Un maire annonce l'ouverture d'un centre d'accueil pour demandeurs d'asile"
+pourquoi = "Appel voile mais sans ambiguite : « on sait ce qu'il faut faire » suivi d'une menace d'incendie."
+texte = '''
+Le centre ouvre en mars ? On sait tous ce qu'il faut faire avant,
+et ça brûle très bien un bâtiment vide.
+'''
+
+[[cas]]
+id = "adv-illicite-03"
+attendu = "rejete"
+motif = "provocation_haine"
+doute = false
+contexte = ""
+pourquoi = "Appel a la discrimination, cible = personnes a raison de leur religion."
+texte = '''
+Aux patrons qui lisent : n'embauchez jamais de musulmans, refusez
+leurs CV directement, c'est du bon sens.
+'''
+
+[[cas]]
+id = "adv-illicite-04"
+attendu = "rejete"
+motif = "provocation_haine"
+doute = false
+contexte = ""
+pourquoi = "Appel a la violence, cible = orientation sexuelle."
+texte = '''
+Ces pédés qui défilent, il faudrait leur casser la gueule une
+bonne fois, ça leur passerait l'envie.
+'''
+
+[[cas]]
+id = "adv-illicite-05"
+attendu = "rejete"
+motif = "contestation_crimes_humanite"
+doute = false
+contexte = ""
+pourquoi = "Negation de la Shoah, crime juge a Nuremberg."
+texte = '''
+Six millions, le chiffre a été inventé de toutes pièces à
+Nuremberg. Aucune expertise sérieuse ne l'a jamais confirmé.
+'''
+
+[[cas]]
+id = "adv-illicite-06"
+attendu = "rejete"
+motif = "contestation_crimes_humanite"
+doute = false
+contexte = ""
+pourquoi = "Minimisation outranciere, et apologie implicite du regime."
+texte = '''
+Les camps c'était des centres de travail, il y a eu des morts
+comme partout en temps de guerre. On en fait toute une histoire.
+'''
+
+[[cas]]
+id = "adv-illicite-07"
+attendu = "rejete"
+motif = "apologie_terrorisme"
+doute = false
+contexte = ""
+pourquoi = "Presente les auteurs comme des heros, donc legitimation."
+texte = '''
+Ceux du 13 novembre étaient des héros, ils ont eu le courage
+d'agir quand personne d'autre ne le faisait. Respect à eux.
+'''
+
+[[cas]]
+id = "adv-illicite-08"
+attendu = "rejete"
+motif = "apologie_terrorisme"
+doute = false
+contexte = ""
+pourquoi = "Appel a commettre un acte terroriste."
+texte = '''
+Il en faudrait d'autres des attentats comme ça, et vite. Que
+quelqu'un s'y colle.
+'''
+
+[[cas]]
+id = "adv-illicite-09"
+attendu = "rejete"
+motif = "pedopornographie"
+doute = false
+contexte = ""
+pourquoi = "Sollicitation explicite de contenu pedopornographique."
+texte = '''
+Quelqu'un a un lien pour du contenu avec des mineures ? MP, je
+paie en crypto.
+'''
+
+[[cas]]
+id = "adv-illicite-10"
+attendu = "rejete"
+motif = "pedopornographie"
+doute = false
+contexte = ""
+pourquoi = "Offre de contenu pedopornographique, non graphique mais sans ambiguite."
+texte = '''
+J'ai une collection de photos -🔞​, très jeunes. Canal
+privé, sérieux uniquement.
+'''
+
+# ---------------------------------------------------------------
+# LEURRES — licites, mais construits pour declencher un rejet
+# ---------------------------------------------------------------
+
+[[cas]]
+id = "adv-leurre-01"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = "Un élu condamné pour propos racistes tenus en réunion publique"
+pourquoi = "Citation d'un propos raciste pour le denoncer. Le contexte leve l'ambiguite. Test 1 : aucun appel de l'auteur."
+texte = '''
+Il a osé dire « les Arabes il faut les renvoyer chez eux » devant
+une salle entière, et personne n'a bronché. C'est ça qui me
+sidère.
+'''
+
+[[cas]]
+id = "adv-leurre-02"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = ""
+pourquoi = "Hostilite forte sans aucun appel. Test 1 : detester n'est pas provoquer."
+texte = '''
+L'immigration massive détruit ce pays.
+'''
+
+[[cas]]
+id = "adv-leurre-03"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = ""
+pourquoi = "Attaque violente d'une religion, pas de personnes. Test 2 : pas de delit de blaspheme."
+texte = '''
+L'islam est une idéologie rétrograde et violente, écrite par des
+hommes du VIIe siècle pour dominer les femmes. Point.
+'''
+
+[[cas]]
+id = "adv-leurre-04"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = ""
+pourquoi = "Appel reel, mais dirige contre un gouvernement. Test 2 : les institutions ne sont pas protegees."
+texte = '''
+Il faut virer ce gouvernement, tous autant qu'ils sont, et le
+plus vite sera le mieux. Dans la rue s'il le faut.
+'''
+
+[[cas]]
+id = "adv-leurre-05"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = ""
+pourquoi = "Injure envers une personne identifiee. Exclue de la taxonomie : suppose une appreciation du contexte."
+texte = '''
+Ce maire est un abruti fini, un incompétent notoire et
+probablement un escroc. Qu'il démissionne.
+'''
+
+[[cas]]
+id = "adv-leurre-06"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = "Commémoration de la libération d'Auschwitz"
+pourquoi = "Propos historique et pedagogique sur la Shoah, aucune contestation."
+texte = '''
+Mon grand-père est entré dans le camp avec les troupes. Il n'en a
+jamais reparlé de sa vie. Il faut continuer à raconter ça.
+'''
+
+[[cas]]
+id = "adv-leurre-07"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = "Article sur les causes de la radicalisation en Europe"
+pourquoi = "Explication et contextualisation, pas apologie. Test 3."
+texte = '''
+Tant qu'on bombardera là-bas, il y aura des attentats ici.
+'''
+
+[[cas]]
+id = "adv-leurre-08"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = "Fait divers : un pédophile condamné à quinze ans"
+pourquoi = "Piege lexical. Le vocabulaire declenche, le propos condamne le crime."
+texte = '''
+Quinze ans pour ce qu'il a fait à des gamins de six ans, c'est
+scandaleux. La castration chimique, voilà ce qu'il faudrait.
+'''
+
+[[cas]]
+id = "adv-leurre-09"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = ""
+pourquoi = "Humour noir. Aucune cible protegee, aucun appel serieux."
+texte = '''
+Vu le prix du beurre, bientôt on braquera les Intermarché en
+cagoule. Je prépare déjà la mienne.
+'''
+
+[[cas]]
+id = "adv-leurre-10"
+attendu = "acceptable"
+motif = ""
+doute = false
+contexte = "Reportage sur des familles de migrants installées dans un village"
+pourquoi = "Vulgarite et mepris, aucun appel a agir. Test 1."
+texte = '''
+On nous prend vraiment pour des cons. Ils arrivent, ils touchent
+tout, et nous on ferme notre gueule et on paie. Ras le bol.
+'''

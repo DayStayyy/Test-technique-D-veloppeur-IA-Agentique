@@ -116,12 +116,18 @@ Un objet à cinq champs :
 Fondée sur le standard « manifestement illicite » :
 
 - provocation à la haine, à la discrimination ou à la violence ;
+- **injure visant une personne ou un groupe à raison d'une
+  caractéristique protégée**, ajoutée en fin de phase 3 : l'injure
+  raciale relève de l'article 33, délit distinct de la provocation,
+  et notre liste ne la couvrait pas ;
 - apologie ou contestation de crimes contre l'humanité ;
 - apologie du terrorisme ;
 - contenu pédopornographique.
 
-La **diffamation** et l'**injure** envers une personne identifiée ne
-sont pas manifestement illicites et ne sont donc **pas rejetées**.
+La **diffamation** envers une personne identifiée n'est pas
+manifestement illicite et n'est donc **pas rejetée**. L'**injure
+envers une personne prise pour elle-même**, sans référence à une
+caractéristique protégée, ne l'est pas davantage.
 
 ### Architecture
 

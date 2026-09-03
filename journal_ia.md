@@ -21,8 +21,8 @@ l'IA » du README, rédigée à la main.
 
 ## Phase 3 — jeu de référence
 
-- Généré :
-- Corrigé / rejeté :
+- Généré : vingt cas adverses, dix illicites et dix leurres, avec la qualification proposée et son raisonnement ; listes de termes de présélection ; module d'échantillonnage à graine fixe ; module de lecture et écriture du jeu de référence avec validation des annotations ; script de construction du jeu ; script d'annotation manuelle à quatre réponses ; sections correspondantes du README.
+- Corrigé / rejeté : textes de plusieurs cas adverses réécrits à la main, dont un reformulé autour d'un emoji plutôt que d'un mot explicite ; qualifications proposées conservées, y compris sur les quatre cas que je signalais comme discutables. Première version de la présélection rejetée après lecture des tirages : un mot isolé remontait des commentaires sans rapport, la règle a été refaite en trois listes avec les termes d'action conditionnés à la présence d'une cible. Taxonomie corrigée en fin de phase : l'annotation a révélé qu'une insulte visant un groupe à raison de son origine relève de l'article 33 et non de la provocation de l'article 24 ; un cinquième motif a été ajouté, la liste initiale que j'avais proposée était incomplète. Répartition dev/test corrigée à la main après annotation, les trois illicites du corpus étant tous tombés côté gelé : une ligne déplacée vers le cadrage, entorse assumée et documentée dans le README.
 
 ## Phase 4 — pipeline
 
