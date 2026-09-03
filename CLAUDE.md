@@ -46,8 +46,10 @@ Chaque commit porte dans son message **la décision qu'il
 matérialise**, pas seulement le fichier touché. Quand une piste est
 abandonnée, le commit qui la retire dit pourquoi.
 
-Le message est **proposé** par Claude ; Adrien le valide ou le
-réécrit. Aucun commit n'est créé sans cette validation.
+**Claude ne commite jamais.** C'est Adrien qui commite, lui seul.
+Claude fournit uniquement le texte du message. Quand plusieurs
+commits sont pertinents, Claude indique en plus quels fichiers vont
+dans quel commit.
 
 ## 4. Section « Arbitrages » du README
 
@@ -101,7 +103,10 @@ Un objet à cinq champs :
 
 - décision binaire : `acceptable` / `rejeté` ;
 - motif légal, issu d'une **liste fermée**, ou vide ;
-- motifs éditoriaux : liste, possiblement vide ;
+- motifs éditoriaux : liste, **toujours vide tant que le périmètre
+  est réduit au légal**. Le champ est conservé pour marquer la
+  frontière de ce qu'on a choisi de ne pas faire, mais il n'est pas
+  demandé au modèle ;
 - justification en une phrase ;
 - indicateur d'incertitude, **en métadonnée**, qui n'influence pas la
   décision.
@@ -120,15 +125,20 @@ sont pas manifestement illicites et ne sont donc **pas rejetées**.
 
 ### Architecture
 
-Deux étages **en série** :
+**Périmètre réduit au légal, décidé en phase 2.** Un seul étage :
+une question au modèle, avec la liste fermée.
 
-1. **étage légal** — une seule question au modèle, avec la liste
-   fermée. Si rejet, on s'arrête ;
-2. **étage éditorial** — un seul critère : le spam.
+L'étage éditorial initialement prévu (spam) est **reporté**. On
+valide d'abord tout le légal sur l'ensemble des phases, c'est
+l'objectif du test. L'éditorial ne sera ajouté que s'il reste du
+temps. Deux raisons : la consigne n'impose que le légal et laisse
+les critères additionnels libres ; et le spam est mal détectable sur
+un commentaire isolé, sans historique d'auteur ni fréquence de
+publication.
 
-L'agrégation est une **priorité lexicographique** : le légal l'emporte
-toujours. Ce n'est pas un agent outillé, c'est un **pipeline à étapes
-fixes**, et on l'assume dans la documentation.
+La question de l'agrégation disparaît donc avec le second étage. Ce
+n'est pas un agent outillé, c'est un **pipeline à étapes fixes**, et
+on l'assume dans la documentation.
 
 ### Règles et LLM
 
@@ -162,13 +172,15 @@ température.
 Les critères sont **le taux de refus** et **le taux de
 faux positifs sur les cas « choquant mais légal »**.
 
-**Modèle de travail, décidé en phase 1.** Le test de refus n'a
-disqualifié aucun candidat : les trois ont classé les cinq cas sans
-jamais refuser. Le développement se poursuit donc avec un seul
-modèle, **Ministral 3 14B** (`mistralai/ministral-14b-2512`), à
-poids ouverts. C'est un choix de travail, pas le choix final. La
-comparaison des trois candidats est reportée aux tests finaux, sur
-le jeu de référence gelé.
+**Modèle de travail : `openai/gpt-5.6-luna`.** Le test de refus n'a
+disqualifié aucun candidat, mais le test de perception des emojis
+écarte Ministral : trois erreurs d'identification et deux erreurs de
+comptage sur sept cas, quand Haiku et Luna font 7 sur 7. Luna est le
+moins cher des deux restants.
+
+C'est un choix de travail, pas le choix final. La comparaison des
+trois candidats est reportée aux tests finaux, sur le jeu de
+référence gelé.
 
 À confirmer en phase 1, au premier appel réel : l'id exact du modèle
 Mistral (le préfixe `mistralai/` reste à vérifier), et la capacité de

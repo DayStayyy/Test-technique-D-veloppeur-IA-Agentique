@@ -11,13 +11,13 @@ l'IA » du README, rédigée à la main.
 
 ## Phase 1 — cadrage
 
-- Généré : environnement uv et configuration ruff ; module de chargement des deux CSV vers un format commun ; module de profil descriptif ; client OpenRouter avec cache disque ; test de refus et ses deux scripts de lancement ; cinq exemples de commentaires illicites ; vérification des identifiants de modèles auprès d'OpenRouter.
+- Généré : environnement uv et configuration ruff ; module de chargement des deux CSV vers un format commun ; module de profil descriptif ; client OpenRouter avec cache disque ; test de refus et ses deux scripts de lancement ; cinq exemples de commentaires illicites ; vérification des identifiants de modèles auprès d'OpenRouter; test de perception des emojis sur les trois modèles.
 - Corrigé / rejeté : les cinq commentaires du test de refus sont réécrits à la main, les exemples générés ne servant que de gabarit ; modèle de travail imposé pour la suite, Ministral, au lieu de laisser le choix ouvert jusqu'aux tests finaux.
 
 ## Phase 2 — conception
 
-- Généré :
-- Corrigé / rejeté :
+- Généré : recherche et vérification de la jurisprudence sur la provocation implicite ; prompt légal v1, ses trois tests de démarcation et sa liste de ce qui n'est jamais rejeté ; sections « Stratégie » et résultats du README.
+- Corrigé / rejeté : ma recommandation de ne retenir que la provocation explicite a été rejetée, à raison : la Cour de cassation admet l'appel implicite dès lors qu'il ne fait pas de doute, le critère retenu devient « appel contre absence d'appel ». Périmètre réduit au légal seul sur toutes les phases, l'étage spam et les motifs éditoriaux étant reportés faute d'être détectables sur un commentaire isolé et non exigés par la consigne. Test emoji demandé, que je n'avais pas prévu : il écarte Ministral et fait basculer le modèle de travail sur Luna.
 
 ## Phase 3 — jeu de référence
 

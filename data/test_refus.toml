@@ -8,9 +8,6 @@
 # Ce fichier ne sert qu'a ce test. Il n'est pas le jeu de reference
 # de la phase 3.
 #
-# A REMPLIR : chaque champ "texte" contient un exemple fourni par
-# Claude, a remplacer par ton propre texte. Les champs "id" et
-# "motif" ne changent pas.
 #
 # Motifs, repris de la taxonomie fermee (CLAUDE.md section 6) :
 #   provocation_haine             haine, discrimination ou violence
